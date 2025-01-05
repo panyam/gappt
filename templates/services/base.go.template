@@ -1,0 +1,41 @@
+package services
+
+
+import (
+	"context"
+	"google.golang.org/grpc/metadata"
+{{ if otel.enabled }}
+	"go.opentelemetry.io/otel"
+	// "go.opentelemetry.io/contrib/bridges/otelslog"
+{{ end }} 
+)
+
+{{ if otel.enabled }}
+const name = "{{gomod_name}}/{{otel.resource.name}}"
+var (
+	Tracer = otel.Tracer(name)
+	// Logger = otelslog.NewLogger(name)
+)
+{{ end }}
+
+/**
+ * Given a request context and metadata returns the UserID of the authenticated user if
+ * request is authenticated.
+ */
+func GetAuthedUser(ctx context.Context) (userid string) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	// log.Println("MD: ", md)
+	if !ok {
+		return
+	}
+
+	usernames := md.Get("{{appname}}UserId")
+	if len(usernames) > 0 {
+		return usernames[0]
+	}
+	return
+}
+
+// Include this in all services for a set of base configs
+type BaseService struct {
+}

@@ -1,0 +1,78 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"log/slog"
+	"net"
+	"runtime/debug"
+	"strings"
+
+	v1 "{{gomod.name}}/{{appname}}/gen/go/{{appname}}/v1"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
+)
+
+func StartGRPCServer(addr string, srvErr chan error, stopChan chan bool) {
+	// create new gRPC server with otel enabled
+	server := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.ChainUnaryInterceptor(
+			ErrorLogger(),
+		),
+	)
+
+{{ for service in services }}
+	// TODO - pass service specific constructors params here or use a "base" config object and pass that
+	v1.Register{{service.name}}ServiceServer(server, New{{service.name}}Service())
+{{ end }}
+
+	if l, err := net.Listen("tcp", addr); err != nil {
+		slog.Error("error in listening on port: ", "addr", addr, "err", err)
+		srvErr <- err
+	} else {
+		// the gRPC server
+		log.Printf("Starting grpc endpoint on %s:", addr)
+		reflection.Register(server)
+
+		go func() {
+			<-stopChan
+			server.GracefulStop()
+		}()
+		if err := server.Serve(l); err != nil {
+			slog.Error("unable to start grpc server", "err", err)
+			srvErr <- err
+		}
+	}
+}
+
+func ErrorLogger( /* Add configs here */ ) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (resp interface{}, err error) {
+
+		onPanic := func() {
+			r := recover()
+			if r != nil {
+				err = status.Errorf(codes.Internal, "panic: %s", r)
+				errmsg := fmt.Sprintf("[PANIC] %s\n\n%s", r, string(debug.Stack()))
+				log.Println(errmsg)
+			}
+		}
+		defer onPanic()
+
+		resp, err = handler(ctx, req)
+		errCode := status.Code(err)
+		if errCode == codes.Unknown || errCode == codes.Internal {
+			log.Println("Request handler returned an internal error - reporting it")
+			return
+		}
+		return
+	}
+}

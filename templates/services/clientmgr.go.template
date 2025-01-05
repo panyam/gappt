@@ -1,0 +1,34 @@
+package services
+
+import (
+	"log"
+
+	protos "{{gomod_name}}/gen/go/{{app_name}}/v1"
+	"google.golang.org/grpc"
+)
+
+type ClientMgr struct {
+	svcAddr        string
+	{{ for svc in services }} 
+	{{ end }}
+	// authSvc             *AuthService
+}
+
+func NewClientMgr(svc_addr string) *ClientMgr {
+	return &ClientMgr{svcAddr: svc_addr}
+}
+
+{{ for svc in services }} 
+func (c *ClientMgr) GetAgentSvcClient() (out protos.AgentServiceClient, err error) {
+	if c.agentSvcClient == nil {
+		agentSvcConn, err := grpc.Dial(c.svcAddr, grpc.WithInsecure())
+		if err != nil {
+			log.Printf("cannot connect with server %v", err)
+			return nil, err
+		}
+
+		c.agentSvcClient = protos.NewAgentServiceClient(agentSvcConn)
+	}
+	return c.agentSvcClient, nil
+}
+{{ end }} 

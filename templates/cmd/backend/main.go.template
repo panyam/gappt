@@ -1,0 +1,100 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+
+	svc "{{gomod.name}}/services"
+	{{gomod.name}}/web"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	// This is needed to enable the use of the grpc_cli tool
+)
+
+var (
+	addr            = flag.String("addr", ":9090", "Address to start the grpc server on.")
+	gw_addr         = flag.String("gw_addr", ":9080", "Address to start the grpc gateway server on.")
+	db_endpoint     = flag.String("db_endpoint", "", fmt.Sprintf("Clickhouse URL to get metrics from.  Default value: CLICKHOUSE_URL environment variable or %s", DefaultClickhouseUrl()))
+	db_bin_endpoint = flag.String("db_bin_endpoint", "", fmt.Sprintf("Clickhouse Binary Protocal URL to get metrics from.  Default value: CLICKHOUSE_BIN_URL environment variable or %s", DefaultClickhouseBinUrl()))
+	db_username     = flag.String("db_username", "", fmt.Sprintf("Clickhouse username.  Default value: CLICKHOUSE_USERNAME environment variable or %s", DefaultClickhouseUsername()))
+	db_password     = flag.String("db_password", "", "Clickhouse password.  Default value: CLICKHOUSE_READONLY_PASSWORD or CLICKHOUSE_PASSWORD environment variable")
+)
+
+func StartWebServer(ctx context.Context, mux http.Handler, gw_addr string, srvErr chan error, stopChan chan bool) {
+	log.Println("Starting grpc gateway server on: ", gw_addr)
+	// handler := otelhttp.NewHandler(mux, "gateway", otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string { return fmt.Sprintf("%s %s %s", operation, r.Method, r.URL.Path) }))
+	server := &http.Server{
+		Addr:        gw_addr,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
+		Handler:     mux,
+	}
+
+	go func() {
+		<-stopChan
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Fatalln(err)
+			panic(err)
+		}
+	}()
+	srvErr <- server.ListenAndServe()
+}
+
+func main() {
+	flag.Parse()
+
+	ctx, onExit := createContext()
+	if onExit != nil {
+		defer onExit()
+	}
+
+	srvErr := make(chan error, 2)
+	httpSrvChan := make(chan bool)
+	grpcSrvChan := make(chan bool)
+
+	trclient := grpc.WithStatsHandler(otelgrpc.NewClientHandler())
+	app, err := web.New{{service.app.classname}}App(*addr)
+	if err != nil {
+		log.Fatal("{{service.app.classname}} App Error: ", err)
+	}
+	app.Api.GrpcAddr = *addr
+	app.Api.DialOpts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), trclient}
+
+	go svc.StartGRPCServer(*addr, ohdb, srvErr, grpcSrvChan)
+	go StartWebServer(ctx, app, *gw_addr, srvErr, httpSrvChan)
+
+	// Wait for interruption.
+	select {
+	case err = <-srvErr:
+		log.Println("Server error: ", err)
+		// Error when starting HTTP server or GRPC server
+		return
+	case <-ctx.Done():
+		// Wait for first CTRL+C.
+		// Stop receiving signal notifications as soon as possible.
+		stop()
+	}
+
+	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
+	httpSrvChan <- true
+	grpcSrvChan <- true
+}
+
+func createContext() (ctx context.Context, onExit func ()) {
+	if {{ otel.enabled }}
+	ctx, setup, stop, err := SetupOtel()
+	onExit = func() {
+		if stop != nil {
+			stop()
+		}
+		err = setup.Shutdown(context.Background())
+	}()
+	return ctx, setup
+	{{ else }}
+	return context.Background(), nil
+	{{ end }}
+}

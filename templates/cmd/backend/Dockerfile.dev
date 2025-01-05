@@ -1,0 +1,26 @@
+FROM golang:latest AS base
+
+RUN go install github.com/air-verse/air@latest
+# RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+FROM base AS base1
+
+WORKDIR /app
+
+COPY Makefile go.mod go.sum ./
+# COPY locallinks ./locallinks
+
+FROM base1 AS base2
+
+COPY . .
+RUN ls -al
+
+RUN go mod download
+
+WORKDIR /app/cmd/backend
+
+# Uncomment below line to eee if the build works as a test
+# Usually this will be useful if you have added or removed folders
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/main main.go
+
+CMD ["air"]

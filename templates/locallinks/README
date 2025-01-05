@@ -1,0 +1,1 @@
+This folder can be used to add symlinks to local versions of go modules for debugging.   See the Dockerfile.dev to see how these are used.

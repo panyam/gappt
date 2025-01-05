@@ -1,0 +1,77 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
+	protos "{{gomod.name}}/gen/go/{{appname}}/v1"
+	gfn "github.com/panyam/goutils/fn"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type {{service.name}}Service struct {
+	protos.Unimplemented{{service.name}}ServiceServer
+  BaseService
+
+  // TODO: add {{service.name}}Service specific fields here
+}
+
+func New{{service.name}}Service() *{{service.name}}Service {
+	return &{{service.name}}Service{
+    // TODO: add your fields' initializers here
+	}
+}
+
+// Listing method for the {{service.name}} entity
+func (s *{{service.name}}Service) List{{service.name}}s(ctx context.Context, req *protos.List{{service.name}}sRequest) (resp *protos.List{{service.name}}sResponse, err error) {
+  resp := protos.List{{service.name}}sResponse{}
+{{ if otel.enabled }}
+	ctx, span := Tracer.Start(ctx, "List{{service.name}}")
+	defer span.End()
+{{ end }}
+	return
+}
+
+// Create method for the {{service.name}} entity
+func (s *{{service.name}}Service) Create{{service.name}}s(ctx context.Context, req *protos.Create{{service.name}}sRequest) (resp *protos.Create{{service.name}}sResponse, err error) {
+  resp := protos.Create{{service.name}}sResponse{}
+{{ if otel.enabled }}
+	ctx, span := Tracer.Start(ctx, "Create{{service.name}}")
+	defer span.End()
+{{ end }}
+	return
+}
+
+// Get method for the {{service.name}} entity
+func (s *{{service.name}}Service) Get{{service.name}}s(ctx context.Context, req *protos.Get{{service.name}}sRequest) (resp *protos.Get{{service.name}}sResponse, err error) {
+  resp := protos.Get{{service.name}}sResponse{}
+{{ if otel.enabled }}
+	ctx, span := Tracer.Start(ctx, "Get{{service.name}}")
+	defer span.End()
+{{ end }}
+	return
+}
+
+// BatchGet method for the {{service.name}} entity
+func (s *{{service.name}}Service) BatchGet{{service.name}}s(ctx context.Context, req *protos.BatchGet{{service.name}}sRequest) (resp *protos.BatchGet{{service.name}}sResponse, err error) {
+  resp := protos.BatchGet{{service.name}}sResponse{}
+{{ if otel.enabled }}
+	ctx, span := Tracer.Start(ctx, "BatchGet{{service.name}}")
+	defer span.End()
+{{ end }}
+	return
+}
+
+// Delete method for the {{service.name}} entity
+func (s *{{service.name}}Service) Delete{{service.name}}s(ctx context.Context, req *protos.Delete{{service.name}}sRequest) (resp *protos.Delete{{service.name}}sResponse, err error) {
+  resp := protos.Delete{{service.name}}sResponse{}
+{{ if otel.enabled }}
+	ctx, span := Tracer.Start(ctx, "Delete{{service.name}}")
+	defer span.End()
+{{ end }}
+	return
+}

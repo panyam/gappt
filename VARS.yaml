@@ -1,0 +1,61 @@
+root:
+  gomod: "github.com/panyam/myapp"
+  app:
+    name: "myapp"
+    classname: "MyApp"
+  target:
+    repo_name: myapp    # Name of the target repo
+    output_dir: "../myapp"
+  grpc:             # GRPC related section
+    # List of services to "generate"
+    # For each GRPC service Foo, the following artifacts are created:
+    # service FooService - which contains a set of CRUD methods
+    # A Foo message object representing the entity
+    # The folder containing the generated artificates will be output_dir/gen
+    services:
+      - Name: Foo
+      - Name: Bar
+
+    # GRPC Gateway API endpoint related configs
+    api_endpoint:
+      enabled: true       # Whether to generate and enable gateway configs
+      endpoint: "/api"    # Endpoint where grpc gateway will be mapped
+      port: "9080"        # GRPC Gateway will be started on this port
+
+    # GRPC Server related configs
+    server:
+      port: "9090"        # GRPC server will be started on this port
+
+  # Auth related sections
+  auth:
+    # Whether auth is enabled for this site
+    enabled: true
+
+    # Root endpoint for various schemes
+    base_endpoint: "/auth"
+
+    # Endpoint for the overall login page
+    login_endpoint: "/auth/login"
+
+    # Overall logout endpoint
+    logout_endpoint: "/auth/logout"
+
+    # Local username/password auth
+    local:
+      enabled: true
+      login_endpoint: "/auth/login"
+    oauth2:
+      google:
+        enabled: true
+        login_endpoint: "/auth/google/login"
+        callback_endpoint: "/auth/google/login"
+      github:
+        enabled: true
+        login_endpoint: "/auth/github/login"
+        callback_endpoint: "/auth/github/login"
+      facebook:
+        enabled: true
+        login_endpoint: "/auth/facebook/login"
+        callback_endpoint: "/auth/facebook/login"
+
+    # 

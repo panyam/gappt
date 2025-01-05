@@ -1,0 +1,179 @@
+
+syntax = "proto3";
+
+option go_package = "{{gomod.name}}/protos";
+package {{appname}}.v1;
+
+import "{{appname}}/v1/models.proto";
+import "google/api/annotations.proto";
+
+message {{servicename}} {
+  // When this resources was registered/discovered
+  google.protobuf.Timestamp created_at = 1;
+
+  // When this resource was last updated
+  google.protobuf.Timestamp updated_at = 2;
+
+  // A Unique ID for this resource
+  string id = 3;
+
+  // Add other fields
+}
+
+/**
+ * Service for managing {{servicename}} resources.
+ */
+service {{servicename}}Service {
+  /**
+   * List operation for {{servicename}} resource
+   */
+  rpc List{{servicename}}Ids(List{{servicename}}IdsRequest) returns (List{{servicename}}IdsResponse) { 
+    option (google.api.http) = {
+      get: "/v1/{{servicename | toLower}}ids"
+    };
+  }
+
+  /**
+   * List all {{servicename | toLower}}s from a customer.
+   */
+  rpc List{{servicename}}s(List{{servicename}}sRequest) returns (List{{servicename}}sResponse) { 
+    option (google.api.http) = {
+      get: "/v1/{{servicename | toLower}}s"
+    };
+  }
+
+  /**
+   * Get a particular {{servicename | toLower}} in the customer environment by {{servicename | toLower}} ID
+   * This will only return the {{servicename | toLower}} metadata.  Specific node info in
+   * nodes api
+   */
+  rpc Get{{servicename}}(Get{{servicename}}Request) returns (Get{{servicename}}Response) { 
+    option (google.api.http) = {
+      get: "/v1/{{servicename | toLower}}s/{id=*}"
+    };
+  }
+
+  /**
+   * Batch get multiple {{servicename | toLower}}s by ID
+   */
+  rpc BatchGet{{servicename}}s(BatchGet{{servicename}}sRequest) returns (BatchGet{{servicename}}sResponse) { 
+    option (google.api.http) = {
+      get: "/v1/{{servicename | toLower}}s:batchGet"
+    };
+  }
+}
+
+/**
+ * An {{servicename | toLower}} search request.  For now only paginations params are provided.
+ */
+message List{{servicename}}sRequest {
+  /**
+   * Pagination paramaters.
+   */
+  Pagination pagination = 1;
+
+  // TODO - Any other filters ond sort criteria for the listing
+  string sort_column = 2;
+
+  string sort_order = 3;
+
+  string query_version = 4;
+
+  bool count_only = 5;
+
+  bool counts_by_health = 6;
+
+  // Limit to those seen in the last N seconds
+  int64 last_n_seconds = 7;
+}
+
+/**
+ * Response of a {{servicename | toLower}} search/listing.
+ */
+message List{{servicename}}sResponse {
+  /**
+   * Pagination response info
+   */
+  PaginationResponse pagination = 1;
+
+  /**
+   * The list of {{servicename | toLower}}s found as part of this response.
+   */
+  repeated {{servicename}} {{servicename | toLower}}s = 2;
+
+  /**
+   * Optionally return counts by health.
+   */
+  map<string, int64> health_counts = 3;
+}
+
+/**
+ * Gets IDs in a particular window
+ */
+message List{{servicename}}IdsRequest {
+  /**
+   * Pagination paramaters.
+   */
+  Pagination pagination = 1;
+
+  // TODO - Any other filters ond sort criteria for the listing
+  string sort_column = 2;
+
+  string sort_order = 3;
+
+  string query_version = 4;
+
+  bool count_only = 5;
+
+  // Limit to those seen in the last N seconds
+  int64 last_n_seconds = 6;
+}
+
+/**
+ * Response of a {{servicename | toLower}} ID fetching
+ */
+message List{{servicename}}IdsResponse {
+  /**
+   * The list of {{servicename | toLower}}s found as part of this response.
+   */
+  repeated string {{servicename | toLower}}_ids = 1;
+
+  /**
+   * Pagination response info
+   */
+  PaginationResponse pagination = 2;
+}
+
+/**
+ * Request to get an {{servicename | toLower}}.
+ */
+message Get{{servicename}}Request {
+  /**
+   * ID of the {{servicename | toLower}} to be fetched
+   */
+  string id = 1;
+}
+
+/**
+ * {{servicename}} get response
+ */
+message Get{{servicename}}Response {
+  {{servicename}} {{servicename | toLower}} = 1;
+}
+
+/**
+ * Request to batch get {{servicename | toLower}}s
+ */
+message BatchGet{{servicename}}sRequest {
+  /**
+   * IDs of the {{servicename | toLower}} to be fetched
+   */
+  repeated string ids = 1;
+}
+
+/**
+ * {{servicename}} batch-get response
+ */
+message BatchGet{{servicename}}sResponse {
+  map<string, {{servicename}}> {{servicename | toLower}}s = 1;
+}

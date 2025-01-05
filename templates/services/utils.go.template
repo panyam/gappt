@@ -1,0 +1,39 @@
+package services
+
+import (
+	"bytes"
+	"encoding/json"
+	"log"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+)
+
+func pprint(resp proto.Message) string {
+	// Assuming you have a gRPC response 'resp'
+	respJSON, err := protojson.Marshal(resp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, respJSON, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return prettyJSON.String()
+}
+
+func removeAccents(s string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	output, _, e := transform.String(t, s)
+	if e != nil {
+		panic(e)
+	}
+	return output
+}
